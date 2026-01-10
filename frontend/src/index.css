@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background-gradient text-text-body min-h-screen;
+    background: linear-gradient(180deg, #0A0A0A, #121212);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-text-heading font-bold;
+  }
+
+  .theme-light body {
+    @apply bg-slate-50 text-slate-700;
+    background: linear-gradient(180deg, #FFFFFF, #E2E8F0);
+  }
+
+  .theme-light h1,
+  .theme-light h2,
+  .theme-light h3,
+  .theme-light h4,
+  .theme-light h5,
+  .theme-light h6 {
+    @apply text-slate-900;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-viral;
+  }
+
+  .youtube-gradient-text {
+    @apply bg-clip-text text-transparent bg-youtube;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-glow hover:-translate-y-1;
+  }
+}
+
+@layer components {
+  .theme-light .bg-card-gradient {
+    background-image: linear-gradient(135deg, #FFFFFF, #E2E8F0) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+    border: 1px solid rgba(148, 163, 184, 0.4) !important;
+  }
+
+  .theme-light .bg-gradient-to-br {
+    background-image: linear-gradient(135deg, #F8FAFC, #E2E8F0) !important;
+    border-color: rgba(148, 163, 184, 0.45) !important;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12) !important;
+  }
+
+  .theme-light [class*="from-zinc-900"] {
+    --tw-gradient-from: #E2E8F0 !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(226, 232, 240, 0)) !important;
+  }
+
+  .theme-light [class*="via-black"] {
+    --tw-gradient-stops: var(--tw-gradient-from), #CBD5F5, var(--tw-gradient-to, rgba(226, 232, 240, 0)) !important;
+  }
+
+  .theme-light [class*="to-zinc-900"] {
+    --tw-gradient-to: #CBD5F5 !important;
+  }
+
+  .theme-light .bg-card-start\/80 {
+    background-color: rgba(248, 250, 252, 0.9) !important;
+  }
+
+  .theme-light .bg-background-gradient {
+    background-image: linear-gradient(180deg, #FFFFFF, #E2E8F0) !important;
+  }
+
+  .theme-light .bg-zinc-900 {
+    /* In light mode, use white surface instead of dark/blue */
+    background-color: #FFFFFF !important;
+  }
+  /* Ensure texts forced to white inside dark badges become readable on white bg in light mode */
+  .theme-light .bg-zinc-900 .text-white {
+    color: #0F172A !important; /* slate-900 */
+  }
+  /* Force small label text inside hero badge to black for readability in light mode */
+  .theme-light .bg-zinc-900 .text-sm,
+  .theme-light .bg-zinc-900 .font-medium {
+    color: #0F172A !important;
+  }
+
+  .theme-light .bg-zinc-800 {
+    background-color: #F8FAFC !important;
+  }
+
+  .theme-light [class*="bg-zinc-900/"] {
+    background-color: rgba(226, 232, 240, 0.7) !important;
+  }
+
+  .theme-light [class*="hover:bg-zinc-900/"]:hover {
+    background-color: rgba(203, 213, 225, 0.85) !important;
+  }
+
+  .theme-light [class*="hover:bg-zinc-800"]:hover {
+    background-color: rgba(226, 232, 240, 0.9) !important;
+  }
+
+  .theme-light .border-zinc-800,
+  .theme-light .border-zinc-900,
+  .theme-light .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(148, 163, 184, 0.6) !important;
+  }
+
+  .theme-light .text-text-heading {
+    color: #0F172A !important;
+  }
+
+  .theme-light .text-text-body {
+    color: #475569 !important;
+  }
+
+  .theme-light .text-zinc-100 {
+    color: #0F172A !important;
+  }
+
+  .theme-light .light-icon-wrapper {
+    background-color: rgba(37, 99, 235, 0.12) !important;
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+
+  .theme-light .light-icon {
+    color: #1D4ED8 !important;
+    transition: color 0.2s ease-in-out;
+  }
+
+  .theme-light .group:hover .light-icon-wrapper,
+  .theme-light .light-icon-wrapper:hover {
+    background-color: rgba(239, 68, 68, 0.18) !important;
+    box-shadow: 0 10px 20px rgba(239, 68, 68, 0.15) !important;
+  }
+
+  .theme-light .group:hover .light-icon,
+  .theme-light .light-icon:hover {
+    color: #DC2626 !important;
+  }
+
+
+  .theme-light .gradient-text {
+    background-image: linear-gradient(135deg, #EF4444, #8B5CF6, #0EA5E9) !important;
+  }
+
+  .theme-light .bg-black\/40 {
+    background-color: rgba(15, 23, 42, 0.05) !important;
+  }
+  .theme-light .bg-black\/20 {
+    background-color: rgba(15, 23, 42, 0.04) !important;
+  }
+  .theme-light .bg-black {
+    background-color: #F8FAFC !important;
+  }
+  .theme-light [class*="bg-black/"] {
+    background-color: rgba(15, 23, 42, 0.06) !important;
+  }
+  .theme-light .text-black {
+    color: #0F172A !important; /* slate-900 */
+  }
+
+  .theme-light .shadow-glow {
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.2) !important;
+  }
+
+  .theme-light .performance-highlight h2,
+  .theme-light .performance-highlight p,
+  .theme-light .performance-stats .performance-stat .text-4xl,
+  .theme-light .performance-stats .performance-stat .text-sm {
+    color: #FFFFFF !important;
+  }
+
+  .theme-light .performance-stats .performance-stat {
+    color: #FFFFFF !important;
+  }
+
+  .theme-light .mission-highlight h2,
+  .theme-light .mission-highlight p {
+    color: #FFFFFF !important;
+  }
+
+  .theme-light .hero-description {
+    color: #FFFFFF !important;
+  }
+
+  /* CTA section (Home) - force white text only for content inside the colored banner */
+  .theme-light .bg-viral h2,
+  .theme-light .bg-viral p {
+    color: #FFFFFF !important;
+  }
+}
+
