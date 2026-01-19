@@ -30,26 +30,4 @@ jobs:
         run: echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" >> $GITHUB_ENV
 
       - name: Run trending.py (Fetch trending videos)
-        run: python src/collection/trending.py
 
-      #- name: Run trending_db.py (Merge trending data into CSV)
-      #  run: python src/processing/trending_db.py
-
-      #- name: Run video_stats.py (Fetch video statistics)
-      #  run: python src/collection/video_stats.py
-
-     #- name: Run video_stats_db.py (Merge video statistics into CSV)
-     #  run: python src/processing/video_stats_db.py
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Commit JSON and CSV files
-        run: |
-          git add assets/meta/trending/*.json
-          git add assets/meta/video_stats/*.json
-          git add db/ods/*.csv
-          git commit -m "Automated data pipeline update [$(date)]" || echo "No changes to commit"
-          git push
