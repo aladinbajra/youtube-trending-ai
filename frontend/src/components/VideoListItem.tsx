@@ -27,6 +27,10 @@ export const VideoListItem = ({ video, onClick }: VideoListItemProps) => {
       animate={{ opacity: 1, x: 0 }}
       whileHover={{ x: 5 }}
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `View ${video.title}` : undefined}
+      onKeyDown={event => { if (onClick && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onClick(); } }}
       className="flex items-center gap-4 bg-card-gradient rounded-card p-4 border border-zinc-800 cursor-pointer hover:border-primary/50 transition-all"
       data-testid="video-list-item"
       data-videoid={video.videoId}
@@ -48,7 +52,7 @@ export const VideoListItem = ({ video, onClick }: VideoListItemProps) => {
             <TrendingUp className="w-8 h-8 text-zinc-700" />
           </div>
         )}
-        
+
         {video.viralityScore && (
           <div className="absolute top-1 right-1 bg-youtube px-2 py-0.5 rounded text-white text-xs font-bold">
             {video.viralityScore.toFixed(1)}%
@@ -61,7 +65,7 @@ export const VideoListItem = ({ video, onClick }: VideoListItemProps) => {
         <h3 className="font-bold text-text-heading mb-1 line-clamp-2">
           {video.title}
         </h3>
-        
+
         {video.channelTitle && (
           <p className="text-text-body text-sm mb-2">{video.channelTitle}</p>
         )}
@@ -71,14 +75,14 @@ export const VideoListItem = ({ video, onClick }: VideoListItemProps) => {
             <Eye size={14} />
             <span>{formatNumber(video.views)}</span>
           </div>
-          
+
           {video.likes && (
             <div className="flex items-center space-x-1">
               <ThumbsUp size={14} />
               <span>{formatNumber(video.likes)}</span>
             </div>
           )}
-          
+
           {video.comments && (
             <div className="flex items-center space-x-1">
               <MessageSquare size={14} />

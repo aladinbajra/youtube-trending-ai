@@ -14,17 +14,17 @@ interface ViewsOverTimeChartProps {
   isLoading?: boolean;
 }
 
-export default function ViewsOverTimeChart({ 
-  data, 
-  title = "Views Over Time", 
+export default function ViewsOverTimeChart({
+  data,
+  title = "Views Over Time",
   height = 400,
-  isLoading = false 
+  isLoading = false
 }: ViewsOverTimeChartProps) {
-  
+
   // Process data: group by date and sum views, then sort and filter to Dec 7
   const processedData = React.useMemo(() => {
     if (!data || data.length === 0) return [];
-    
+
     // Group by date (YYYY-MM-DD format)
     const grouped = data.reduce((acc, item) => {
       const dateStr = item.date.split('T')[0]; // Get YYYY-MM-DD part
@@ -35,38 +35,34 @@ export default function ViewsOverTimeChart({
       acc[dateStr].count += 1;
       return acc;
     }, {} as Record<string, { date: string; views: number; count: number }>);
-    
+
     // Convert to array, sort by date, and filter to Dec 7, 2025
     const result = Object.values(grouped)
       .map(item => ({ date: item.date, views: item.views }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .filter(item => {
-        const itemDate = new Date(item.date);
-        const dec7 = new Date('2025-12-07');
-        return itemDate <= dec7;
-      });
-    
+;
+
     return result;
   }, [data]);
-  
+
   // Smart tick formatter to show fewer labels
   const formatXAxisTick = (dateString: string, index: number, total: number) => {
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.toLocaleDateString('en-US', { month: 'short' });
-    
+
     // Show every 3rd label or important dates (1st, 15th, last)
-    const shouldShow = index % Math.max(1, Math.floor(total / 8)) === 0 || 
-                      day === 1 || 
-                      day === 15 || 
+    const shouldShow = index % Math.max(1, Math.floor(total / 8)) === 0 ||
+                      day === 1 ||
+                      day === 15 ||
                       index === total - 1;
-    
+
     if (shouldShow) {
       return `${month} ${day}`;
     }
     return '';
   };
-  
+
   if (isLoading) {
     return (
       <div className="bg-card-gradient dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 shadow-xl backdrop-blur-sm">
@@ -120,16 +116,16 @@ export default function ViewsOverTimeChart({
               <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.15} />
             </linearGradient>
           </defs>
-          
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke="rgb(161 161 170)" 
+
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="rgb(161 161 170)"
             className="dark:stroke-zinc-700"
             opacity={0.3}
           />
-          
-          <XAxis 
-            dataKey="date" 
+
+          <XAxis
+            dataKey="date"
             tickFormatter={(value, index) => formatXAxisTick(value, index, processedData.length)}
             stroke="rgb(113 113 122)"
             className="dark:stroke-zinc-400"
@@ -140,8 +136,8 @@ export default function ViewsOverTimeChart({
             height={60}
             interval="preserveStartEnd"
           />
-          
-          <YAxis 
+
+          <YAxis
             tickFormatter={formatViews}
             stroke="rgb(113 113 122)"
             className="dark:stroke-zinc-400"
@@ -149,15 +145,15 @@ export default function ViewsOverTimeChart({
             tickLine={{ stroke: 'rgb(161 161 170)', className: 'dark:stroke-zinc-600' }}
             width={70}
           />
-          
-          <Tooltip 
+
+          <Tooltip
             content={({ active, payload, label }) => {
               if (!active || !payload || payload.length === 0) return null;
               const date = new Date(label);
-              const formattedDate = date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
+              const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
               });
               return (
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-4 backdrop-blur-sm">
@@ -176,11 +172,11 @@ export default function ViewsOverTimeChart({
             }}
             cursor={{ stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5 5' }}
           />
-          
-          <Area 
-            type="monotone" 
-            dataKey="views" 
-            stroke="#3b82f6" 
+
+          <Area
+            type="monotone"
+            dataKey="views"
+            stroke="#3b82f6"
             strokeWidth={3}
             fill="url(#viewsGradientLight)"
             animationDuration={1200}

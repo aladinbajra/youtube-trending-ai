@@ -1,6 +1,6 @@
 import { X, Eye, ThumbsUp, MessageSquare, Calendar, TrendingUp, Brain, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useId } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Video, VideoHistory } from '../types';
 import { apiService } from '../services/api';
@@ -18,30 +18,56 @@ export const VideoDetailModal = ({ video, isOpen, onClose }: VideoDetailModalPro
   const [aiExplanation, setAiExplanation] = useState<string>('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const dialog = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const close = useRef(onClose);
+  useEffect(() => { close.current = onClose; }, [onClose]);
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
+    setHistory(null);
+    setHistoryError('');
     try {
-      const data = await apiService.getVideoHistory(video.videoId);
-      setHistory(data);
+      const data = await apiService.getVideoHistory(video.videoId, signal);
+      if (!signal?.aborted) setHistory(data);
     } catch (error) {
-      console.error('Error loading history:', error);
+      if (!signal?.aborted) setHistoryError(error instanceof Error ? error.message : 'History is unavailable.');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [video.videoId]);
 
   useEffect(() => {
-    if (isOpen && video.videoId) {
-      void loadHistory();
-    }
+    const controller = new AbortController();
+    if (isOpen && video.videoId) void loadHistory(controller.signal);
+    return () => controller.abort();
   }, [isOpen, video.videoId, loadHistory]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialog.current?.focus();
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close.current();
+      if (event.key !== 'Tab') return;
+      const elements = Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input,select,textarea,[tabindex="0"]') || []).filter(element => element.getClientRects().length);
+      if (!elements.length) { event.preventDefault(); return; }
+      const first = elements[0], last = elements[elements.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog.current)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', keyboard);
+    return () => { document.removeEventListener('keydown', keyboard); document.body.style.overflow = overflow; previous?.focus(); };
+  }, [isOpen]);
 
   const loadAIExplanation = async () => {
     setAiLoading(true);
     setShowAI(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const response = await fetch(`${apiUrl}/api/ai/explain-score?video_id=${video.videoId}`, {
         method: 'POST'
       });
@@ -95,7 +121,7 @@ export const VideoDetailModal = ({ video, isOpen, onClose }: VideoDetailModalPro
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 z-50 overflow-y-auto" onClick={event => { if (!dialog.current?.contains(event.target as Node)) onClose(); }}>
             <div className="flex min-h-full items-center justify-center p-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -104,13 +130,18 @@ export const VideoDetailModal = ({ video, isOpen, onClose }: VideoDetailModalPro
                 transition={{ duration: 0.3 }}
                 className="relative bg-card-gradient rounded-card border border-zinc-800 w-full max-w-4xl shadow-card"
                 onClick={(e) => e.stopPropagation()}
+                ref={dialog}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                tabIndex={-1}
                 data-testid="video-modal"
                 data-videoid={video.videoId}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between p-6 border-b border-zinc-800">
                   <div className="flex-1 pr-4">
-                    <h2 className="text-2xl font-bold text-text-heading mb-2">
+                    <h2 id={titleId} className="text-2xl font-bold text-text-heading mb-2">
                       {video.title}
                     </h2>
                     {video.channelTitle && (
@@ -162,7 +193,7 @@ export const VideoDetailModal = ({ video, isOpen, onClose }: VideoDetailModalPro
                         </div>
                         <button
                           onClick={loadAIExplanation}
-                          disabled={aiLoading}
+                            disabled={aiLoading || apiService.isUsingSampleData()}
                           className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 px-2 py-1 rounded flex items-center space-x-1 transition-colors disabled:opacity-50"
                           title="AI Explain"
                         >
@@ -218,7 +249,7 @@ export const VideoDetailModal = ({ video, isOpen, onClose }: VideoDetailModalPro
                   {/* View History Chart */}
                   <div className="bg-zinc-900/30 rounded-lg p-6">
                     <h3 className="text-lg font-bold mb-4">Views Over Time</h3>
-                    
+
                     {loading && (
                       <div className="flex items-center justify-center h-64">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -229,12 +260,12 @@ export const VideoDetailModal = ({ video, isOpen, onClose }: VideoDetailModalPro
                       <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                          <XAxis 
-                            dataKey="date" 
+                          <XAxis
+                            dataKey="date"
                             stroke="#888"
                             style={{ fontSize: '12px' }}
                           />
-                          <YAxis 
+                          <YAxis
                             stroke="#888"
                             style={{ fontSize: '12px' }}
                             tickFormatter={(value) => formatNumber(value)}
@@ -259,7 +290,8 @@ export const VideoDetailModal = ({ video, isOpen, onClose }: VideoDetailModalPro
                       </ResponsiveContainer>
                     )}
 
-                    {!loading && chartData.length === 0 && (
+                    {historyError && <div role="alert"><p>{historyError}</p><button type="button" className="underline mt-2" onClick={() => void loadHistory()}>Retry history</button></div>}
+                    {!loading && !historyError && chartData.length === 0 && (
                       <div className="text-center text-text-body py-12">
                         No historical data available for this video
                       </div>

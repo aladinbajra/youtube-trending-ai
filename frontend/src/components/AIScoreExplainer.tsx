@@ -1,3 +1,4 @@
+import { apiService } from '../services/api';
 import { Lightbulb, Search, Loader2, Sparkles, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
@@ -23,7 +24,7 @@ export const AIScoreExplainer = ({ videos }: AIScoreExplainerProps) => {
     setExplanation('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const response = await fetch(`${apiUrl}/api/ai/explain-score?video_id=${video.videoId}`, {
         method: 'POST'
       });

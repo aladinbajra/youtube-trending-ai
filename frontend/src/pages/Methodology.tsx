@@ -1,10 +1,11 @@
+import { apiService } from '../services/api';
 import { TrendingUp, Target, Users, Clock, Flame, BarChart3, Database, Brain, Zap, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 export const Methodology = () => {
-  const [totalVideos, setTotalVideos] = useState<number | null>(null);
+  const [, setTotalVideos] = useState<number | null>(null);
   const [countries, setCountries] = useState<number | null>(null);
   const [dataPoints, setDataPoints] = useState<number | null>(null);
 
@@ -12,7 +13,7 @@ export const Methodology = () => {
     const fetchStats = async () => {
       try {
         const ts = Date.now();
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+        const apiUrl = apiService.getApiUrl();
         const res = await fetch(`${apiUrl}/api/stats?_t=${ts}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache' }
@@ -66,7 +67,7 @@ export const Methodology = () => {
         {/* Defining Virality */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center">Defining Video Virality</h2>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -106,7 +107,7 @@ export const Methodology = () => {
           <div className="mt-8 bg-zinc-900/50 rounded-card p-6 border border-zinc-800">
             <p className="text-text-body text-center">
               Our models classify videos as <span className="text-green-400 font-semibold">"Viral Success"</span> or{' '}
-              <span className="text-text-body font-semibold">"Expected Performance"</span> based on the ratio of actual 
+              <span className="text-text-body font-semibold">"Expected Performance"</span> based on the ratio of actual
               views to expected views given the channel's subscriber count and historical performance.
             </p>
           </div>
@@ -115,7 +116,7 @@ export const Methodology = () => {
         {/* Key Virality Metrics */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center">Key Virality Metrics</h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {viralityMetrics.map((metric, index) => (
               <motion.div
@@ -147,7 +148,7 @@ export const Methodology = () => {
         {/* Research Methodology */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center">Research Methodology</h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {researchSteps.map((step, index) => (
               <motion.div
@@ -177,7 +178,7 @@ export const Methodology = () => {
             className="bg-viral rounded-card p-12 text-center"
           >
             <h2 className="text-3xl font-bold mb-6">Technologies Utilized</h2>
-            
+
             <div className="grid md:grid-cols-4 gap-6 mb-8">
               {[
                 { icon: Database, label: 'YouTube API v3' },
@@ -193,7 +194,7 @@ export const Methodology = () => {
             </div>
 
             <p className="text-lg opacity-90 max-w-3xl mx-auto">
-              Combining Python 3.9+, pandas for data processing, and advanced ML algorithms 
+              Combining Python 3.9+, pandas for data processing, and advanced ML algorithms
               to analyze <span className="font-bold">
                 {dataPoints != null
                   ? (dataPoints >= 1000

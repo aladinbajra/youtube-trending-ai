@@ -1,3 +1,4 @@
+import { apiService } from '../services/api';
 import { TrendingUp, Target, Users, Globe, BarChart3, Brain, Zap, Award, Github, Database, Code, Rocket } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -12,7 +13,7 @@ export const About = () => {
     const fetchStats = async () => {
       try {
         const ts = Date.now();
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+        const apiUrl = apiService.getApiUrl();
         const res = await fetch(`${apiUrl}/api/stats?_t=${ts}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache' }
@@ -42,7 +43,7 @@ export const About = () => {
   const stats = [
     { icon: BarChart3, title: 'Videos Analyzed', value: videosPretty, color: 'text-primary' },
     { icon: Globe, title: 'Countries Tracked', value: countries != null ? `${countries}` : '—', color: 'text-secondary' },
-    { icon: Brain, title: 'AI Accuracy', value: '99.2%', color: 'text-accent' },
+    { icon: Brain, title: 'AI Insights', value: 'On demand', color: 'text-accent' },
     { icon: Zap, title: 'Data Points', value: dataPointsPretty, color: 'text-yellow-400' },
   ];
 
@@ -80,7 +81,7 @@ export const About = () => {
             About <span className="gradient-text">Tube Virality</span>
           </h1>
           <p className="text-xl text-text-body max-w-3xl mx-auto leading-relaxed">
-            A cutting-edge research platform that leverages AI and machine learning to analyze 
+            A cutting-edge research platform that leverages AI and machine learning to analyze
             YouTube video performance and predict viral success patterns.
           </p>
         </motion.div>
@@ -117,14 +118,14 @@ export const About = () => {
           >
             <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
             <p className="text-lg leading-relaxed mb-6">
-              To democratize access to YouTube analytics and empower content creators with actionable 
-              insights that help them understand what makes content go viral. By combining real-time 
-              data collection, advanced machine learning, and comprehensive analytics, we provide 
+              To democratize access to YouTube analytics and empower content creators with actionable
+              insights that help them understand what makes content go viral. By combining real-time
+              data collection, advanced machine learning, and comprehensive analytics, we provide
               creators with the tools they need to optimize their content strategy.
             </p>
             <p className="text-lg leading-relaxed">
-              This platform serves as a research tool for analyzing viral content patterns across 
-              different countries and cultures, contributing to the broader understanding of digital 
+              This platform serves as a research tool for analyzing viral content patterns across
+              different countries and cultures, contributing to the broader understanding of digital
               media trends and engagement dynamics.
             </p>
           </motion.div>
@@ -135,7 +136,7 @@ export const About = () => {
           <h2 className="text-3xl font-bold mb-10 text-center">
             What Makes Us <span className="gradient-text">Unique</span>
           </h2>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             {features.map((feature, index) => {
               const Icon = feature.icon;
@@ -168,7 +169,7 @@ export const About = () => {
           <h2 className="text-3xl font-bold mb-10 text-center">
             Powered By <span className="gradient-text">Modern Technology</span>
           </h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {techStack.map((tech, index) => {
               const Icon = tech.icon;
@@ -204,7 +205,7 @@ export const About = () => {
           >
             <h2 className="text-3xl font-bold mb-4">Ready to Explore?</h2>
             <p className="text-text-body text-lg mb-8 max-w-2xl mx-auto">
-              Start analyzing trending videos and discover what makes content go viral with our 
+              Start analyzing trending videos and discover what makes content go viral with our
               advanced analytics platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

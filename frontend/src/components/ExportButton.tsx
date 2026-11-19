@@ -1,113 +1,50 @@
 import { Download } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Video } from '../types';
+import { downloadFile, videosToCSV } from '../utils/export';
 
-interface ExportButtonProps {
-  videos: Video[];
-  filename?: string;
-}
+interface ExportButtonProps { videos: Video[]; filename?: string }
 
 export const ExportButton = ({ videos, filename = 'tube-virality-data' }: ExportButtonProps) => {
-  const exportToCSV = () => {
-    if (videos.length === 0) return;
-
-    // Create CSV headers
-    const headers = ['Video ID', 'Title', 'Channel', 'Views', 'Likes', 'Comments', 'Country', 'Virality Score', 'Published At'];
-    
-    // Create CSV rows
-    const rows = videos.map(v => [
-      v.videoId,
-      `"${v.title?.replace(/"/g, '""') || ''}"`, // Escape quotes
-      `"${v.channelTitle?.replace(/"/g, '""') || ''}"`,
-      v.views || 0,
-      v.likes || 0,
-      v.comments || 0,
-      v.country || '',
-      v.viralityScore || 0,
-      v.publishedAt || '',
-    ]);
-
-    // Combine
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-
-    // Create download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const container = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  useEffect(() => {
+    if (!open) return;
+    container.current?.querySelector<HTMLButtonElement>('[data-testid="export-csv"]')?.focus();
+    const outside = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setOpen(false); trigger.current?.focus(); } };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
+  }, [open]);
+  const exportFile = (format: 'csv' | 'json') => {
+    const date = new Date().toISOString().slice(0, 10);
+    downloadFile(format === 'csv' ? videosToCSV(videos) : JSON.stringify(videos, null, 2), format === 'csv' ? 'text/csv;charset=utf-8' : 'application/json', `${filename}_${date}.${format}`);
+    setOpen(false);
+    trigger.current?.focus();
   };
-
-  const exportToJSON = () => {
-    if (videos.length === 0) return;
-
-    const jsonContent = JSON.stringify(videos, null, 2);
-    const blob = new Blob([jsonContent], { type: 'application/json' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.json`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(videos.map(video => [video.videoId, video.title, video.views ?? 0, video.likes ?? 0, video.country ?? ''].join('\t')).join('\n'));
+      setMessage(`Copied ${videos.length} videos.`);
+    } catch { setMessage('Clipboard access failed. Please export a file instead.'); }
+    setOpen(false);
+    trigger.current?.focus();
   };
-
-  const copyToClipboard = () => {
-    const text = videos.map(v => 
-      `${v.videoId}\t${v.title}\t${v.views}\t${v.likes}\t${v.country}`
-    ).join('\n');
-
-    navigator.clipboard.writeText(text).then(() => {
-      alert(`Copied ${videos.length} videos to clipboard!`);
-    });
-  };
-
   return (
-    <div className="relative group">
-      <button
-        className="flex items-center space-x-2 px-4 py-2 bg-youtube rounded-button hover:shadow-glow transition-all font-semibold"
-        data-testid="export-button"
-      >
-        <Download size={20} />
-        <span>Export ({videos.length})</span>
+    <div className="relative" ref={container}>
+      <button type="button" ref={trigger} disabled={videos.length === 0} aria-expanded={open} aria-controls={id} onClick={() => setOpen(value => !value)} className="flex items-center space-x-2 px-4 py-3 bg-youtube rounded-button font-semibold disabled:opacity-50" data-testid="export-button">
+        <Download size={20} /><span>Export ({videos.length})</span>
       </button>
-
-      {/* Dropdown Menu */}
-      <div className="absolute right-0 mt-2 w-48 bg-card-gradient border border-zinc-800 rounded-card shadow-card opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-        <button
-          onClick={exportToCSV}
-          className="w-full text-left px-4 py-3 hover:bg-zinc-800 transition-colors text-sm first:rounded-t-card"
-          data-testid="export-csv"
-        >
-          Export as CSV
-        </button>
-        <button
-          onClick={exportToJSON}
-          className="w-full text-left px-4 py-3 hover:bg-zinc-800 transition-colors text-sm"
-          data-testid="export-json"
-        >
-          Export as JSON
-        </button>
-        <button
-          onClick={copyToClipboard}
-          className="w-full text-left px-4 py-3 hover:bg-zinc-800 transition-colors text-sm last:rounded-b-card"
-          data-testid="export-clipboard"
-        >
-          Copy to Clipboard
-        </button>
-      </div>
+      {open && <div id={id} aria-label="Export formats" className="absolute right-0 mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-card shadow-card z-30 p-1">
+        <button type="button" onClick={() => exportFile('csv')} className="w-full text-left px-4 py-3 hover:bg-zinc-800 focus:bg-zinc-800" data-testid="export-csv">Export as CSV</button>
+        <button type="button" onClick={() => exportFile('json')} className="w-full text-left px-4 py-3 hover:bg-zinc-800 focus:bg-zinc-800" data-testid="export-json">Export as JSON</button>
+        <button type="button" onClick={() => void copy()} className="w-full text-left px-4 py-3 hover:bg-zinc-800 focus:bg-zinc-800" data-testid="export-clipboard">Copy to Clipboard</button>
+      </div>}
+      <span role="status" className="sr-only">{message}</span>
     </div>
   );
 };
-

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Eye, ThumbsUp, MessageSquare, Rocket, Users, Clock, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { 
+import {
   StatCard, ProgressCard, CountryTable, VideoCard, VideoDetailModal,
   SearchBar, FilterBar, SortBar, ExportButton, Pagination, ViewToggle, VideoListItem,
   LoadingSpinner, AIInsightsPanel,
@@ -29,6 +29,8 @@ const CATEGORY_TABS: Array<{ key: string; label: string }> = [
 export const Analytics = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const requestRef = useRef<AbortController | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({});
@@ -41,39 +43,31 @@ export const Analytics = () => {
   const [category, setCategory] = useState<string>('all');
   const [appliedCategory, setAppliedCategory] = useState<string>('all');
   const categoryDebounceRef = useRef<number | null>(null);
-    
+
   const loadData = useCallback(async () => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
     setIsRefreshing(true);
     setLoading(true);
-    
+    setError('');
     try {
-      console.log('[Analytics] Fetching videos for category:', appliedCategory);
-      const data = await apiService.getVideos({ limit: 100, offset: 0, category: appliedCategory });
-      const totalViews = data.reduce((sum, v) => sum + (v.views || 0), 0);
-      const totalLikes = data.reduce((sum, v) => sum + (v.likes || 0), 0);
-      const totalComments = data.reduce((sum, v) => sum + (v.comments || 0), 0);
-      
-        console.log('[Analytics] Loaded videos:', data.length);
-      console.log('[Analytics] Total Views:', totalViews.toLocaleString(), `(${(totalViews / 1000000).toFixed(2)}M)`);
-      console.log('[Analytics] Total Likes:', totalLikes.toLocaleString());
-      console.log('[Analytics] Total Comments:', totalComments.toLocaleString());
-      console.log('[Analytics] Engagement Rate:', totalViews > 0 ? (((totalLikes + totalComments) / totalViews) * 100).toFixed(2) + '%' : '0%');
-      console.log('[Analytics] Avg Comments:', data.length > 0 ? Math.floor(totalComments / data.length).toLocaleString() : '0');
-      
+      const data = await apiService.getAllVideos({ category: appliedCategory, signal: controller.signal });
+      if (!controller.signal.aborted) {
         setVideos(data);
-      // Trigger refresh for AI components
-      setRefreshKey(prev => prev + 1);
-      } catch (error) {
-        console.error('Error loading videos:', error);
-      } finally {
-        setLoading(false);
-      setIsRefreshing(false);
+        setRefreshKey(previous => previous + 1);
       }
+    } catch (failure) {
+      if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : 'Unable to load analytics.');
+    } finally {
+      if (!controller.signal.aborted) { setLoading(false); setIsRefreshing(false); }
+    }
   }, [appliedCategory]);
 
   useEffect(() => {
     document.title = 'Analytics Dashboard - Tube Virality';
-    loadData();
+    void loadData();
+    return () => requestRef.current?.abort();
   }, [loadData]);
 
   useEffect(() => {
@@ -90,7 +84,7 @@ export const Analytics = () => {
     const totalViews = videos.reduce((sum, v) => sum + (v.views || 0), 0);
     const totalLikes = videos.reduce((sum, v) => sum + (v.likes || 0), 0);
     const totalComments = videos.reduce((sum, v) => sum + (v.comments || 0), 0);
-    
+
     // Engagement rate = (Likes + Comments) / Views * 100
     const totalEngagements = totalLikes + totalComments;
     const avgEngagement = totalViews > 0 ? (totalEngagements / totalViews) * 100 : 0;
@@ -98,8 +92,8 @@ export const Analytics = () => {
 
     // Format total views (round to nearest million with decimal if needed)
     const viewsInMillions = totalViews / 1000000;
-    const formattedViews = viewsInMillions >= 1 
-      ? Math.floor(viewsInMillions) 
+    const formattedViews = viewsInMillions >= 1
+      ? Math.floor(viewsInMillions)
       : Math.floor(viewsInMillions * 10) / 10;
 
     return {
@@ -137,9 +131,10 @@ export const Analytics = () => {
     const MAX_REASONABLE_ENGAGEMENT = 20; // cap at 20% to cut outliers
 
     const countryToAgg = new Map<string, CountryAgg>();
-    
+
     videos.forEach(video => {
-      const country = video.country;
+      const markets = video.countries?.length ? video.countries : [video.country];
+      markets.forEach(country => {
       const views = video.views || 0;
       const likes = video.likes || 0;
       const comments = video.comments || 0;
@@ -165,6 +160,7 @@ export const Analytics = () => {
       }
 
       countryToAgg.set(country, agg);
+      });
     });
 
     const sorted = Array.from(countryToAgg.entries())
@@ -199,7 +195,7 @@ export const Analytics = () => {
 
     // Apply filters
     if (filters.country) {
-      result = result.filter(v => v.country === filters.country);
+      result = result.filter(v => v.country === filters.country || v.countries?.includes(filters.country!));
     }
     if (filters.minViews) {
       result = result.filter(v => (v.views || 0) >= filters.minViews!);
@@ -223,6 +219,7 @@ export const Analytics = () => {
         bVal = new Date(bDate).getTime();
       }
 
+      if (aVal === bVal) return a.videoId.localeCompare(b.videoId);
       if (sortDirection === 'asc') {
         return aVal > bVal ? 1 : -1;
       } else {
@@ -260,7 +257,7 @@ export const Analytics = () => {
     }, 150);
   }, [category]);
 
-  if (loading) {
+  if (loading && videos.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner text="Loading analytics..." />
@@ -298,6 +295,7 @@ export const Analytics = () => {
           </div>
         </motion.div>
 
+        {error && <div role="alert" className="mb-8 rounded-xl border border-red-400/40 bg-red-400/10 p-5"><p>{error}</p><button type="button" className="mt-3 underline" onClick={() => void loadData()}>Retry loading data</button>{videos.length > 0 && <p className="mt-2 text-sm">Showing the last successfully loaded data.</p>}</div>}
         {/* Key Metrics */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Key Metrics</h2>
@@ -370,7 +368,7 @@ export const Analytics = () => {
 
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
             <div className="flex-1">
-              <SearchBar onSearch={setSearchQuery} placeholder="Search videos by title or channel..." />
+              <SearchBar value={searchQuery} onSearch={setSearchQuery} placeholder="Search videos by title or channel..." />
             </div>
             <div className="flex gap-4">
               <ExportButton videos={filteredAndSortedVideos} filename="analytics-export" />
@@ -378,9 +376,9 @@ export const Analytics = () => {
           </div>
 
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            <FilterBar 
-              videos={videos} 
-              onFilterChange={setFilters} 
+            <FilterBar
+              videos={videos}
+              onFilterChange={setFilters}
               activeFilters={filters}
             />
             <div className="flex gap-4">
@@ -406,7 +404,7 @@ export const Analytics = () => {
         {/* Videos Grid */}
         <section>
           <h2 className="text-2xl font-bold mb-6">Videos</h2>
-          
+
           {filteredAndSortedVideos.length === 0 && !loading && (
             <div className="bg-card-gradient rounded-card border border-zinc-800 p-12 text-center">
               <p className="text-text-body text-lg">No videos match your filters</p>
@@ -414,6 +412,7 @@ export const Analytics = () => {
                 onClick={() => {
                   setFilters({});
                   setSearchQuery('');
+                  handleCategorySelect('all');
                 }}
                 className="mt-4 px-6 py-2 bg-youtube rounded-button hover:shadow-glow transition-all"
               >
@@ -426,8 +425,8 @@ export const Analytics = () => {
           {viewMode === 'grid' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {paginatedVideos.map((video) => (
-                <VideoCard 
-                  key={video.videoId} 
+                <VideoCard
+                  key={video.videoId}
                   video={video}
                   onClick={() => setSelectedVideo(video)}
                 />

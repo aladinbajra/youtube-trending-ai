@@ -21,6 +21,10 @@ export const VideoCard = ({ video, onClick }: VideoCardProps) => {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `View ${video.title}` : undefined}
+      onKeyDown={event => { if (onClick && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onClick(); } }}
       className="bg-card-gradient rounded-card overflow-hidden border border-zinc-800 cursor-pointer card-hover"
       data-testid="video-card"
       data-videoid={video.videoId}
@@ -41,7 +45,7 @@ export const VideoCard = ({ video, onClick }: VideoCardProps) => {
             <TrendingUp className="w-12 h-12 text-zinc-700" />
           </div>
         )}
-        
+
         {video.viralityScore && (
           <div className="absolute top-2 right-2 bg-youtube px-2 py-1 rounded text-white text-xs font-bold">
             {video.viralityScore.toFixed(1)}%
@@ -54,7 +58,7 @@ export const VideoCard = ({ video, onClick }: VideoCardProps) => {
         <h3 className="font-bold text-text-heading mb-2 line-clamp-2 min-h-[3rem]">
           {video.title}
         </h3>
-        
+
         {video.channelTitle && (
           <p className="text-text-body text-sm mb-3">{video.channelTitle}</p>
         )}
@@ -65,14 +69,14 @@ export const VideoCard = ({ video, onClick }: VideoCardProps) => {
             <Eye size={14} />
             <span>{formatNumber(video.views)}</span>
           </div>
-          
+
           {video.likes && (
             <div className="flex items-center space-x-1">
               <ThumbsUp size={14} />
               <span>{formatNumber(video.likes)}</span>
             </div>
           )}
-          
+
           {video.comments && (
             <div className="flex items-center space-x-1">
               <MessageSquare size={14} />

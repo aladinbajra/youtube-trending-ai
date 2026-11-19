@@ -1,3 +1,4 @@
+import { apiService } from '../services/api';
 import { Database, Zap, Globe, Brain, CheckCircle, ArrowRight, TrendingUp, BarChart3, Sparkles, Clock, Shield, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -13,7 +14,7 @@ export const DataProcess = () => {
     const fetchStats = async () => {
       try {
         const ts = Date.now();
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+        const apiUrl = apiService.getApiUrl();
         const res = await fetch(`${apiUrl}/api/stats?_t=${ts}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache' }
@@ -38,15 +39,15 @@ export const DataProcess = () => {
   const metrics = [
     { icon: Database, value: videosPretty, label: 'Videos Tracked', color: 'text-blue-400' },
     { icon: Globe, value: countries != null ? String(countries) : '—', label: 'Global Markets', color: 'text-purple-400' },
-    { icon: Zap, value: '<50ms', label: 'API Response', color: 'text-green-400' },
-    { icon: Brain, value: '99.2%', label: 'AI Accuracy', color: 'text-yellow-400' },
+    { icon: Zap, value: 'Recorded', label: 'Data source', color: 'text-green-400' },
+    { icon: Brain, value: 'On demand', label: 'AI Insights', color: 'text-yellow-400' },
   ];
 
   const features = [
     {
       icon: Zap,
-      title: 'Real-Time Processing',
-      description: 'Automated daily collection and processing ensures fresh data every 24 hours with minimal latency.',
+      title: 'File-aware refresh',
+      description: 'New observations become visible when the recorded source datasets change.',
       highlight: 'Updated Daily'
     },
     {
@@ -116,7 +117,7 @@ export const DataProcess = () => {
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -134,7 +135,7 @@ export const DataProcess = () => {
           </h1>
 
           <p className="text-xl text-text-body max-w-3xl mx-auto mb-8">
-            Automated collection, AI-powered analysis, and real-time delivery of YouTube trending data 
+            Automated collection, AI-powered analysis, and real-time delivery of YouTube trending data
             from {countries != null ? countries : 'multiple'} countries. Built for scale, speed, and reliability. Currently tracking {totalVideos != null ? totalVideos.toLocaleString() : 'thousands of'} unique videos.
           </p>
 
@@ -183,7 +184,7 @@ export const DataProcess = () => {
           <h2 className="text-3xl font-bold text-center mb-10">
             Why Choose Our <span className="gradient-text">Platform</span>
           </h2>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             {features.map((feature, index) => {
               const Icon = feature.icon;
@@ -239,7 +240,7 @@ export const DataProcess = () => {
                 >
                   {/* Gradient accent */}
                   <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${stage.gradient}`} />
-                  
+
                   <div className="flex items-start space-x-4">
                     <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${stage.gradient} flex items-center justify-center flex-shrink-0 relative group-hover:scale-110 transition-transform`}>
                       <Icon className="w-8 h-8 text-white" />
@@ -247,11 +248,11 @@ export const DataProcess = () => {
                         {stage.step}
                       </span>
                     </div>
-                    
+
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold mb-2 text-text-heading">{stage.title}</h3>
                       <p className="text-text-body mb-4">{stage.description}</p>
-                      
+
                       <div className="grid grid-cols-2 gap-2">
                         {stage.items.map((item, idx) => (
                           <div key={idx} className="flex items-center space-x-2">
@@ -280,20 +281,20 @@ export const DataProcess = () => {
             <p className="text-lg mb-8 max-w-2xl mx-auto">
               Our infrastructure is optimized for speed, reliability, and scale
             </p>
-            
+
             <div className="grid md:grid-cols-3 gap-8 performance-stats">
               <div className="performance-stat bg-black/20 rounded-lg p-6 backdrop-blur-sm">
                 <Clock className="w-10 h-10 mx-auto mb-3 text-white" />
                 <div className="text-4xl font-bold mb-2">Daily</div>
                 <div className="text-sm opacity-90">Automated Updates</div>
               </div>
-              
+
               <div className="performance-stat bg-black/20 rounded-lg p-6 backdrop-blur-sm">
                 <Zap className="w-10 h-10 mx-auto mb-3 text-white" />
                 <div className="text-4xl font-bold mb-2">&lt;50ms</div>
                 <div className="text-sm opacity-90">API Response Time</div>
               </div>
-              
+
               <div className="performance-stat bg-black/20 rounded-lg p-6 backdrop-blur-sm">
                 <Shield className="w-10 h-10 mx-auto mb-3 text-white" />
                 <div className="text-4xl font-bold mb-2">24/7</div>
@@ -315,7 +316,7 @@ export const DataProcess = () => {
             <p className="text-text-body text-lg mb-8 max-w-2xl mx-auto">
               Start exploring trending videos, virality insights, and AI-powered analytics today
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/analytics"

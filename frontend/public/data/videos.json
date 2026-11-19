@@ -1,0 +1,138 @@
+[
+  {
+    "videoId": "demo-0",
+    "title": "Demo: Exploring solar energy",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "28",
+    "country": "US",
+    "countries": [
+      "US"
+    ],
+    "views": 142000,
+    "likes": 7100,
+    "comments": 142,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 35,
+    "isDemo": true,
+    "engagementRate": 5.1
+  },
+  {
+    "videoId": "demo-1",
+    "title": "Demo: A weekend cooking lesson",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "26",
+    "country": "GB",
+    "countries": [
+      "GB"
+    ],
+    "views": 86000,
+    "likes": 4300,
+    "comments": 86,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 40,
+    "isDemo": true,
+    "engagementRate": 5.1
+  },
+  {
+    "videoId": "demo-2",
+    "title": "Demo: The art of acoustic music",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "10",
+    "country": "CA",
+    "countries": [
+      "CA"
+    ],
+    "views": 231000,
+    "likes": 11550,
+    "comments": 231,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 45,
+    "isDemo": true,
+    "engagementRate": 5.1
+  },
+  {
+    "videoId": "demo-3",
+    "title": "Demo: A strategy game walkthrough",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "20",
+    "country": "DE",
+    "countries": [
+      "DE"
+    ],
+    "views": 175000,
+    "likes": 8750,
+    "comments": 175,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 50,
+    "isDemo": true,
+    "engagementRate": 5.1
+  },
+  {
+    "videoId": "demo-4",
+    "title": "Demo: Learning to draw landscapes",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "27",
+    "country": "US",
+    "countries": [
+      "US"
+    ],
+    "views": 65000,
+    "likes": 3250,
+    "comments": 65,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 55,
+    "isDemo": true,
+    "engagementRate": 5.1
+  },
+  {
+    "videoId": "demo-5",
+    "title": "Demo: A local football recap",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "17",
+    "country": "GB",
+    "countries": [
+      "GB"
+    ],
+    "views": 192000,
+    "likes": 9600,
+    "comments": 192,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 60,
+    "isDemo": true,
+    "engagementRate": 5.1
+  },
+  {
+    "videoId": "demo-6",
+    "title": "Demo: A quiet travel journal",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "22",
+    "country": "CA",
+    "countries": [
+      "CA"
+    ],
+    "views": 49000,
+    "likes": 2450,
+    "comments": 49,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 65,
+    "isDemo": true,
+    "engagementRate": 5.1
+  },
+  {
+    "videoId": "demo-7",
+    "title": "Demo: How cameras capture light",
+    "channelTitle": "Illustrative demo channel",
+    "categoryId": "28",
+    "country": "DE",
+    "countries": [
+      "DE"
+    ],
+    "views": 115000,
+    "likes": 5750,
+    "comments": 115,
+    "publishedAt": "2026-01-01T12:00:00Z",
+    "viralityScore": 70,
+    "isDemo": true,
+    "engagementRate": 5.1
+  }
+]

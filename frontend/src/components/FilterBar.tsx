@@ -20,7 +20,7 @@ export const FilterBar = ({ videos, onFilterChange, activeFilters }: FilterBarPr
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Get unique countries from videos
-  const countries = Array.from(new Set(videos.map(v => v.country).filter(Boolean))).sort();
+  const countries = Array.from(new Set(videos.flatMap(v => v.countries?.length ? v.countries : [v.country]).filter(Boolean))).sort();
 
   const handleCountryChange = (country: string) => {
     onFilterChange({ ...activeFilters, country: country || undefined });

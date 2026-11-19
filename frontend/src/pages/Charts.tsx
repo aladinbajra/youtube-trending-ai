@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ViewsOverTimeChart from '../components/charts/ViewsOverTimeChart';
@@ -21,16 +21,19 @@ export const Charts = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const [timelineData, setTimelineData] = useState<TimelineData[]>([]);
 
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
     setLoading(true);
-    
+
     try {
-      const data = await apiService.getVideos();
+      setError('');
+      const data = await apiService.getAllVideos();
       setVideos(data);
     } catch (error) {
-      console.error('Error loading videos:', error);
+      setError(error instanceof Error ? error.message : 'Unable to load charts.');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -42,19 +45,9 @@ export const Charts = () => {
     loadData();
   }, [loadData]);
 
-  // Prepare data for ViewsOverTimeChart - include all data up to Dec 7, 2025
-  const viewsOverTimeData = videos
-    .filter(v => {
-      if (!v.publishedAt || !v.views) return false;
-      const videoDate = new Date(v.publishedAt);
-      const dec7 = new Date('2025-12-07');
-      return videoDate <= dec7;
-    })
-    .map(v => ({
-      date: v.publishedAt!,
-      views: v.views!
-    }))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const viewsOverTimeData = timelineData.filter(point => Boolean(point.date)).map(point => ({
+    date: point.date!, views: Object.entries(point).reduce((sum, [key, value]) => sum + (key.startsWith('video') && typeof value === 'number' ? value : 0), 0),
+  }));
 
   // Prepare data for TopVideosChart
   const topVideosData = videos
@@ -77,7 +70,8 @@ export const Charts = () => {
 
   // Prepare data for CountryPerformanceChart
   const countryStats = videos.reduce((acc, v) => {
-    const country = v.country || 'Unknown';
+    const markets = v.countries?.length ? v.countries : [v.country || 'Unknown'];
+    markets.forEach(country => {
     if (!acc[country]) {
       acc[country] = { videoCount: 0, totalViews: 0, totalEngagement: 0, count: 0 };
     }
@@ -85,6 +79,7 @@ export const Charts = () => {
     acc[country].totalViews += (v.views || 0);
     acc[country].totalEngagement += (v.engagementRate || 0);
     acc[country].count += 1;
+    });
     return acc;
   }, {} as Record<string, { videoCount: number; totalViews: number; totalEngagement: number; count: number }>);
 
@@ -109,40 +104,31 @@ export const Charts = () => {
       title: v.title
     }));
 
-  // Prepare data for MultiVideoTimelineChart
-  const top5Videos = videos
-    .filter(v => v.views)
-    .sort((a, b) => (b.views || 0) - (a.views || 0))
-    .slice(0, 5);
-  const videoTitles = top5Videos.map(v => v.title);
-  
-  // Generate timeline data from actual published dates
-  const timelineData = (() => {
-    // Get unique dates from all videos
-    const allDates = videos
-      .map(v => v.publishedAt?.split('T')[0])
-      .filter((date): date is string => Boolean(date))
-      .sort();
-    
-    const uniqueDates = Array.from(new Set(allDates)).slice(-30); // Last 30 days
-    
-    return uniqueDates.map(date => {
-      const dataPoint: TimelineData = { date };
-      top5Videos.forEach((video, idx) => {
-        // For each video, use cumulative views up to that date
-        // If video was published before or on this date, show views, otherwise 0
-        const videoDate = video.publishedAt?.split('T')[0];
-        dataPoint[`video${idx + 1}`] = (videoDate && date && videoDate <= date) ? (video.views || 0) : 0;
+  const top5Videos = useMemo(() => [...videos].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5), [videos]);
+  const videoTitles = top5Videos.map(video => video.title);
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.allSettled(top5Videos.map(video => apiService.getVideoHistory(video.videoId, controller.signal))).then(results => {
+      if (controller.signal.aborted) return;
+      const dates = new Map<string, TimelineData>();
+      results.forEach((result, index) => {
+        if (result.status !== 'fulfilled') return;
+        result.value.timestamps.forEach((date, position) => {
+          const point = dates.get(date) || { date };
+          point[`video${index + 1}`] = result.value.views[position];
+          dates.set(date, point);
+        });
       });
-      return dataPoint as TimelineData;
+      setTimelineData([...dates.values()].sort((a, b) => a.date!.localeCompare(b.date!)));
     });
-  })();
+    return () => controller.abort();
+  }, [top5Videos]);
 
   // Prepare data for PublishingHeatmap - REAL DATA from publishedAt
   const heatmapData = (() => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const counts: Record<string, Record<number, number>> = {};
-    
+
     // Initialize counts
     days.forEach(day => {
       counts[day] = {};
@@ -150,21 +136,22 @@ export const Charts = () => {
         counts[day][hour] = 0;
       }
     });
-    
+
     // Count actual publishing times
     videos.forEach(video => {
       if (video.publishedAt) {
         try {
           const date = new Date(video.publishedAt);
-          const dayName = days[date.getDay()]; // 0 = Sunday, 1 = Monday, etc.
-          const hour = date.getHours();
+          if (!Number.isFinite(date.getTime())) return;
+          const dayName = days[date.getUTCDay()]; // 0 = Sunday, 1 = Monday, etc.
+          const hour = date.getUTCHours();
           counts[dayName][hour]++;
         } catch (e) {
           // Skip invalid dates
         }
       }
     });
-    
+
     // Convert to array format
     const result = [];
     for (const day of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) {
@@ -176,7 +163,7 @@ export const Charts = () => {
         });
       }
     }
-    
+
     return result;
   })();
 
@@ -215,6 +202,7 @@ export const Charts = () => {
           </div>
         </motion.div>
 
+        {error && <div role="alert" className="mb-6 rounded-xl border border-red-400/40 p-5"><p>{error}</p><button type="button" className="mt-3 underline" onClick={() => void loadData()}>Retry loading charts</button></div>}
         {/* Charts Grid */}
         <div className="space-y-8">
           {/* Row 1: Views Over Time */}
@@ -223,8 +211,9 @@ export const Charts = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <ViewsOverTimeChart 
-              data={viewsOverTimeData} 
+            <ViewsOverTimeChart
+              data={viewsOverTimeData}
+              title="Recorded views — five leading videos"
               isLoading={loading}
             />
           </motion.div>
@@ -236,8 +225,8 @@ export const Charts = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <TopVideosChart 
-                data={topVideosData} 
+              <TopVideosChart
+                data={topVideosData}
                 isLoading={loading}
               />
             </motion.div>
@@ -247,8 +236,8 @@ export const Charts = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <ViralityDistributionChart 
-                data={viralityDistData} 
+              <ViralityDistributionChart
+                data={viralityDistData}
                 isLoading={loading}
               />
             </motion.div>
@@ -260,8 +249,8 @@ export const Charts = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <CountryPerformanceChart 
-              data={countryData} 
+            <CountryPerformanceChart
+              data={countryData}
               isLoading={loading}
             />
           </motion.div>
@@ -273,8 +262,8 @@ export const Charts = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <EngagementScatterChart 
-                data={scatterData} 
+              <EngagementScatterChart
+                data={scatterData}
                 isLoading={loading}
               />
             </motion.div>
@@ -284,8 +273,8 @@ export const Charts = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <ViralityHistogram 
-                data={videos} 
+              <ViralityHistogram
+                data={videos}
                 isLoading={loading}
               />
             </motion.div>
@@ -297,7 +286,7 @@ export const Charts = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <MultiVideoTimelineChart 
+            <MultiVideoTimelineChart
               data={timelineData}
               videoTitles={videoTitles}
               isLoading={loading}
@@ -310,8 +299,9 @@ export const Charts = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
           >
-            <PublishingHeatmap 
-              data={heatmapData} 
+            <PublishingHeatmap
+              data={heatmapData}
+              title="Publishing patterns (UTC)"
               isLoading={loading}
             />
           </motion.div>

@@ -1,3 +1,4 @@
+import { apiService } from '../services/api';
 import { Brain, Search, Loader2, Sparkles, ThumbsUp, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
@@ -23,7 +24,7 @@ export const AIVideoAnalyzer = ({ videos }: AIVideoAnalyzerProps) => {
     setAnalysis('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const response = await fetch(`${apiUrl}/api/ai/analyze-video?video_id=${video.videoId}`, {
         method: 'POST'
       });

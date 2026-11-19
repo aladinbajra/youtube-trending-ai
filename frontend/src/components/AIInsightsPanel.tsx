@@ -1,3 +1,4 @@
+import { apiService } from '../services/api';
 import { Brain, Sparkles, TrendingUp, Lightbulb, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -13,6 +14,11 @@ export const AIInsightsPanel = ({ className = '' }: AIInsightsPanelProps) => {
   const [totalVideos, setTotalVideos] = useState<number | null>(null);
 
   useEffect(() => {
+    if (apiService.isUsingSampleData()) {
+      setLoading(false);
+      setError('Connect recorded data to request AI insights.');
+      return;
+    }
     loadStats();
     loadInsights();
   }, []);
@@ -20,7 +26,7 @@ export const AIInsightsPanel = ({ className = '' }: AIInsightsPanelProps) => {
   const loadStats = async () => {
     try {
       const ts = Date.now();
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const res = await fetch(`${apiUrl}/api/stats?_t=${ts}`, {
         cache: 'no-cache',
         headers: { 'Cache-Control': 'no-cache' }
@@ -37,12 +43,12 @@ export const AIInsightsPanel = ({ className = '' }: AIInsightsPanelProps) => {
   const loadInsights = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const response = await fetch(`${apiUrl}/api/ai/insights`);
       const data = await response.json();
-      
+
       if (data.success) {
         setInsights(data.insights);
       } else {
@@ -113,7 +119,7 @@ export const AIInsightsPanel = ({ className = '' }: AIInsightsPanelProps) => {
             <p className="text-xs text-text-body">Powered by GPT-4o-mini</p>
           </div>
         </div>
-        
+
         <button
           onClick={loadInsights}
           className="text-sm text-purple-400 hover:text-purple-300 transition-colors flex items-center space-x-1"

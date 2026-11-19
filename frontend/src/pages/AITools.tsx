@@ -19,7 +19,7 @@ export const AITools = () => {
       setVideos(data);
       setRefreshKey(prev => prev + 1);
       const timestamp = Date.now();
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const res = await fetch(`${apiUrl}/api/stats?_t=${timestamp}`, { cache: 'no-cache', headers: { 'Cache-Control': 'no-cache' } });
       if (res.ok) {
         const s = await res.json();
@@ -53,11 +53,11 @@ export const AITools = () => {
                 <Brain className="w-4 h-4 text-purple-400" />
                 <span className="text-sm text-purple-400 font-semibold">Powered by GPT-4o-mini</span>
               </div>
-              
+
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 AI <span className="gradient-text">Content Tools</span>
               </h1>
-              
+
               <p className="text-text-body text-lg max-w-3xl">
                 Leverage artificial intelligence to optimize your content strategy and predict viral success
               </p>
@@ -236,7 +236,7 @@ export const AITools = () => {
                   Powered by Advanced AI
                 </span>
               </motion.div>
-              
+
               <h2 className="text-4xl font-bold mb-4">
                 How <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">AI Powers</span> This Platform
               </h2>
@@ -244,7 +244,7 @@ export const AITools = () => {
                 From daily data harvesting to explainable decisions, every stage is automated so you can move faster with confidence.
               </p>
             </div>
-            
+
             {/* Process Steps */}
             <div className="grid md:grid-cols-3 gap-8 mb-12">
               {/* Step 1 */}
@@ -264,7 +264,7 @@ export const AITools = () => {
                       1
                     </div>
                   </div>
-                  
+
                   {/* Content */}
                   <h3 className="text-xl font-bold mb-3 text-center">Massive Data Collection</h3>
                   <div className="space-y-2 mb-4">
@@ -293,7 +293,7 @@ export const AITools = () => {
                     Automated daily sync with the YouTube Data API keeps the platform fresh across every tracked market.
                   </p>
                 </div>
-                
+
                 {/* Arrow connector (hidden on mobile) */}
                 <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-20">
                   <Zap className="w-8 h-8 text-purple-500/50" />
@@ -317,7 +317,7 @@ export const AITools = () => {
                       2
                     </div>
                   </div>
-                  
+
                   {/* Content */}
                   <h3 className="text-xl font-bold mb-3 text-center">AI Deep Analysis</h3>
                   <div className="space-y-2 mb-4">
@@ -338,7 +338,7 @@ export const AITools = () => {
                     GPT-4o-mini layers sentiment, trend velocity and correlation analysis over millions of data points.
                   </p>
                 </div>
-                
+
                 {/* Arrow connector */}
                 <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-20">
                   <Zap className="w-8 h-8 text-blue-500/50" />
@@ -362,7 +362,7 @@ export const AITools = () => {
                       3
                     </div>
                   </div>
-                  
+
                   {/* Content */}
                   <h3 className="text-xl font-bold mb-3 text-center">Actionable Insights</h3>
                   <div className="space-y-2 mb-4">
@@ -399,7 +399,7 @@ export const AITools = () => {
                   AI Technology Stack
                 </h3>
               </div>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -409,7 +409,7 @@ export const AITools = () => {
                   <p className="text-xs font-semibold text-purple-400 mb-1">OpenAI</p>
                   <p className="text-xs text-text-body">GPT-4o-mini</p>
                 </motion.div>
-                
+
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center hover:bg-blue-500/20 transition-colors"
@@ -418,7 +418,7 @@ export const AITools = () => {
                   <p className="text-xs font-semibold text-blue-400 mb-1">NLP</p>
                   <p className="text-xs text-text-body">Language Processing</p>
                 </motion.div>
-                
+
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center hover:bg-green-500/20 transition-colors"
@@ -427,7 +427,7 @@ export const AITools = () => {
                   <p className="text-xs font-semibold text-green-400 mb-1">ML Models</p>
                   <p className="text-xs text-text-body">Pattern Recognition</p>
                 </motion.div>
-                
+
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-center hover:bg-yellow-500/20 transition-colors"

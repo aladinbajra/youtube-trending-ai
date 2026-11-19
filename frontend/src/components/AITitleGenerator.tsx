@@ -1,3 +1,4 @@
+import { apiService } from '../services/api';
 import { Wand2, Copy, Check, Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
@@ -19,30 +20,30 @@ export const AITitleGenerator = () => {
       setError('Please enter a topic');
       return;
     }
-    
+
     if (topic.trim().length < 3) {
       setError('Topic too short - be more specific (e.g., "AI tutorial for beginners")');
       return;
     }
-    
+
     setLoading(true);
     setSuggestions([]);
     setError('');
-    
+
     try {
       console.log('[AI] Generating titles for:', topic);
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const response = await fetch(`${apiUrl}/api/ai/generate-titles?topic=${encodeURIComponent(topic)}&count=5`, {
         method: 'POST'
       });
-      
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log('[AI] Response:', data);
-      
+
       if (data.success && data.suggestions && data.suggestions.length > 0) {
         setSuggestions(data.suggestions);
       } else {
@@ -116,7 +117,7 @@ export const AITitleGenerator = () => {
             )}
           </button>
         </div>
-        
+
         {/* Error message */}
         {error && (
           <motion.div
@@ -127,7 +128,7 @@ export const AITitleGenerator = () => {
             {error}
           </motion.div>
         )}
-        
+
         {/* Helper text */}
         {!error && !loading && suggestions.length === 0 && (
           <div className="mt-3 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-400">
@@ -170,7 +171,7 @@ export const AITitleGenerator = () => {
                       {suggestion.title}
                     </p>
                   </div>
-                  
+
                   <button
                     onClick={() => copyTitle(suggestion.title, index)}
                     className="flex-shrink-0 p-2 hover:bg-zinc-800 rounded transition-colors"

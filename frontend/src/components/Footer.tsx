@@ -1,6 +1,7 @@
+import { apiService } from '../services/api';
 import { Link } from "react-router-dom";
-import { 
-  TrendingUp, Database, Brain, Code, Sparkles, 
+import {
+  TrendingUp, Database, Brain, Code, Sparkles,
   Home, BarChart3, Wand2, Cpu, Info,
   CheckCircle2, Globe, Target
 } from "lucide-react";
@@ -14,7 +15,7 @@ const Footer = () => {
     const fetchStats = async () => {
       try {
         const ts = Date.now();
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+        const apiUrl = apiService.getApiUrl();
         const res = await fetch(`${apiUrl}/api/stats?_t=${ts}`, {
           cache: 'no-cache',
           headers: { 'Cache-Control': 'no-cache' }
@@ -57,11 +58,11 @@ const Footer = () => {
   return (
     <footer className="bg-card-start/80 backdrop-blur-xl border-t border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
+
         {/* Header Section - Centered Logo & Title */}
         <div className="text-center mb-12">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center space-x-3 group hover:-translate-y-1 transition-all duration-300"
           >
             <div className="w-12 h-12 rounded-xl bg-youtube flex items-center justify-center shadow-glow group-hover:shadow-[0_0_50px_rgba(255,0,0,0.4)] transition-all duration-300">
@@ -78,7 +79,7 @@ const Footer = () => {
 
         {/* Main Content Grid - 3 Columns */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-12 mb-8">
-          
+
           {/* Column 1: Stats Section */}
           <div className="text-center md:text-left">
             <h3 className="text-base font-semibold mb-6 bg-clip-text text-transparent bg-viral flex items-center justify-center md:justify-start">
@@ -165,7 +166,7 @@ const Footer = () => {
             <span>© 2025 Tube Virality.</span>
             <span className="hidden sm:inline">All rights reserved.</span>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Brain className="w-3.5 h-3.5 text-secondary" />
             <span>AI-Powered YouTube Analytics Platform</span>

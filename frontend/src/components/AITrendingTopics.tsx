@@ -1,4 +1,5 @@
-import { TrendingUp, Loader2, Sparkles, RefreshCw, Music, Gamepad2, Radio, Users, Zap, Film, Mic, Video, BarChart3 } from 'lucide-react';
+import { apiService } from '../services/api';
+import { TrendingUp, Loader2, Sparkles, RefreshCw, Music, Gamepad2, Radio, Zap, Film, Mic, Video, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
@@ -22,7 +23,7 @@ export const AITrendingTopics = () => {
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const apiUrl = apiService.getApiUrl();
       const response = await fetch(`${apiUrl}/api/ai/trending-topics?limit=100`, {
         method: 'GET'
       });
@@ -59,7 +60,7 @@ export const AITrendingTopics = () => {
 
   const getTopicIcon = (index: number, topicName: string) => {
     const name = topicName.toLowerCase();
-    
+
     // Map topic names to appropriate icons
     if (name.includes('music') || name.includes('song') || name.includes('remix')) {
       return <Music className="w-6 h-6 text-red-400" />;
@@ -85,7 +86,7 @@ export const AITrendingTopics = () => {
     if (name.includes('roblox')) {
       return <Gamepad2 className="w-6 h-6 text-cyan-400" />;
     }
-    
+
     // Default icons based on index
     const defaultIcons = [
       <TrendingUp className="w-6 h-6 text-red-400" />,

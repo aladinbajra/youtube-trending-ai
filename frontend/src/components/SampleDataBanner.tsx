@@ -16,7 +16,7 @@ export const SampleDataBanner = () => {
               Using Local Sample Data
             </h3>
             <p className="text-sm text-yellow-100/80">
-              Connect to live backend by setting <code className="bg-black/30 px-1 py-0.5 rounded">VITE_API_URL</code> in your <code className="bg-black/30 px-1 py-0.5 rounded">.env</code> file
+              Demo mode is enabled. These illustrative records are not live YouTube observations.
             </p>
           </div>
         </div>

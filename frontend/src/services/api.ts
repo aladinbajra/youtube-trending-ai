@@ -1,16 +1,13 @@
 import type { Video, VideoHistory } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || '/data';
-const USE_SAMPLE_DATA = !import.meta.env.VITE_API_URL;
-
-console.log('[API Service] VITE_API_URL:', import.meta.env.VITE_API_URL);
-console.log('[API Service] API_URL:', API_URL);
-console.log('[API Service] USE_SAMPLE_DATA:', USE_SAMPLE_DATA);
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const USE_SAMPLE_DATA = import.meta.env.VITE_USE_SAMPLE_DATA === 'true';
 
 type VideoQueryOptions = {
   limit?: number;
   offset?: number;
   category?: string;
+  signal?: AbortSignal;
 };
 
 type CategoryFilterConfig = {
@@ -198,97 +195,70 @@ const CATEGORY_FILTERS: Record<string, CategoryFilterConfig> = Object.fromEntrie
   ]),
 );
 
-class ApiService {
-  private baseUrl: string;
-  private useSampleData: boolean;
+export class ApiService {
+  constructor(private baseUrl = API_URL, private useSampleData = USE_SAMPLE_DATA) {}
 
-  constructor() {
-    this.baseUrl = API_URL;
-    this.useSampleData = USE_SAMPLE_DATA;
-    console.log('[API Service] Initialized with baseUrl:', this.baseUrl);
-    console.log('[API Service] Using sample data:', this.useSampleData);
-  }
-
-  async getVideos(options: VideoQueryOptions = {}): Promise<Video[]> {
-    const {
-      limit = 100,
-      offset = 0,
-      category = 'all',
-    } = options;
-
+  private async request<T>(path: string, signal?: AbortSignal): Promise<{ data: T; total: number | null }> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    if (signal?.aborted) abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    const timeout = setTimeout(abort, 20_000);
     try {
-      if (this.useSampleData) {
-        console.log('[API] Loading SAMPLE data from /data/videos.json');
-        const response = await fetch('/data/videos.json');
-        if (!response.ok) {
-          throw new Error('Failed to load sample data');
-        }
-        const data: Video[] = await response.json();
-        console.log('[API] Loaded', data.length, 'videos from SAMPLE data');
-        const filtered = this.filterVideosByCategory(data, category);
-        return filtered.slice(offset, offset + limit);
-      }
-
-      const timestamp = Date.now();
-      const params = new URLSearchParams({
-        limit: String(limit),
-        offset: String(offset),
-        _t: String(timestamp),
-      });
-      if (category && category !== 'all') {
-        params.append('category', category);
-      }
-
-      const url = `${this.baseUrl}/api/videos?${params.toString()}`;
-      console.log('[API] Fetching REAL data from backend:', url);
-      const response = await fetch(url, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      const data: Video[] = await response.json();
-      console.log('[API] Loaded', data.length, 'videos from BACKEND');
-      console.log('[API] Total Views in dataset:', data.reduce((sum: number, v: Video) => sum + (v.views || 0), 0));
-      return data;
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-      try {
-        const response = await fetch('/data/videos.json');
-        const data: Video[] = await response.json();
-        const filtered = this.filterVideosByCategory(data, category);
-        return filtered.slice(offset, offset + limit);
-      } catch (fallbackError) {
-        console.error('Error loading fallback data:', fallbackError);
-        return [];
-      }
+      const response = await fetch(path, { signal: controller.signal, cache: 'no-store' });
+      if (!response.ok) throw new Error(`Data service returned ${response.status}. Please retry.`);
+      const header = response.headers.get('X-Total-Count');
+      return { data: await response.json() as T, total: header !== null && /^\d+$/.test(header) ? Number(header) : null };
+    } finally {
+      clearTimeout(timeout);
+      signal?.removeEventListener('abort', abort);
     }
   }
 
-  async getVideoHistory(videoId: string): Promise<VideoHistory> {
-    try {
-      if (this.useSampleData) {
-        return this.generateSampleHistory();
-      }
-
-      const timestamp = Date.now();
-      const response = await fetch(`${this.baseUrl}/api/videos/${videoId}/history?_t=${timestamp}`, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching video history:', error);
-      return this.generateSampleHistory();
+  async getVideos({ limit = 100, offset = 0, category = 'all', signal }: VideoQueryOptions = {}): Promise<Video[]> {
+    if (this.useSampleData) {
+      const { data } = await this.request<Video[]>('/data/videos.json', signal);
+      if (!Array.isArray(data)) throw new Error('Invalid sample dataset.');
+      return this.filterVideosByCategory(data, category).slice(offset, offset + limit);
     }
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset), category });
+    const { data } = await this.request<Video[]>(`${this.baseUrl}/api/videos?${params}`, signal);
+    if (!Array.isArray(data)) throw new Error('Invalid video response.');
+    return data;
+  }
+
+  async getAllVideos(options: Omit<VideoQueryOptions, 'limit' | 'offset'> = {}): Promise<Video[]> {
+    if (this.useSampleData) return this.getVideos({ ...options, limit: Number.MAX_SAFE_INTEGER });
+    const videos = new Map<string, Video>();
+    const pageSize = 1000;
+    let offset = 0;
+    let more = true;
+    while (more) {
+      const params = new URLSearchParams({ limit: String(pageSize), offset: String(offset), category: options.category || 'all' });
+      const { data, total } = await this.request<Video[]>(`${this.baseUrl}/api/videos?${params}`, options.signal);
+      if (!Array.isArray(data)) throw new Error('Invalid video response.');
+      const previous = videos.size;
+      for (const video of data) videos.set(video.videoId, video);
+      offset += data.length;
+      more = data.length > 0 && (total !== null ? offset < total : data.length >= pageSize);
+      if (more && videos.size === previous) throw new Error('The data service returned a repeated page.');
+    }
+    return [...videos.values()];
+  }
+
+  async getVideoHistory(videoId: string, signal?: AbortSignal): Promise<VideoHistory> {
+    if (this.useSampleData) return { timestamps: [], views: [] };
+    const { data } = await this.request<VideoHistory>(`${this.baseUrl}/api/videos/${encodeURIComponent(videoId)}/history`, signal);
+    if (!Array.isArray(data.timestamps) || !Array.isArray(data.views) || data.timestamps.length !== data.views.length) throw new Error('Invalid history response.');
+    return data;
+  }
+
+  async getStats(): Promise<{ total_videos: number; countries: number; latest_collection_at: string | null; data_points?: number }> {
+    if (this.useSampleData) {
+      const videos = await this.getAllVideos();
+      return { total_videos: videos.length, countries: new Set(videos.map(video => video.country).filter(Boolean)).size, latest_collection_at: null };
+    }
+    return (await this.request<{ total_videos: number; countries: number; latest_collection_at: string | null }>(`${this.baseUrl}/api/stats`)).data;
   }
 
   private filterVideosByCategory(videos: Video[], category: string): Video[] {
@@ -334,30 +304,8 @@ class ApiService {
     });
   }
 
-  private generateSampleHistory(): VideoHistory {
-    const days = 30;
-    const timestamps: string[] = [];
-    const views: number[] = [];
-    const baseViews = Math.floor(Math.random() * 1000000);
-    
-    for (let i = 0; i < days; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - (days - i));
-      timestamps.push(date.toISOString().split('T')[0]);
-      views.push(Math.floor(baseViews + (baseViews * 0.1 * i) + Math.random() * 50000));
-    }
-
-    return { timestamps, views };
-  }
-
-  isUsingSampleData(): boolean {
-    return this.useSampleData;
-  }
-
-  getApiUrl(): string {
-    return this.baseUrl;
-  }
+  isUsingSampleData(): boolean { return this.useSampleData; }
+  getApiUrl(): string { return this.baseUrl; }
 }
 
 export const apiService = new ApiService();
-

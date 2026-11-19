@@ -1,7 +1,8 @@
 import { Sparkles, BarChart3, TrendingUp, Globe, Brain, Users, ArrowRight, LineChart, Wand2, Target, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { StatCard, FeatureCard } from '../components';
+import { StatCard } from '../components/StatCard';
+import { FeatureCard } from '../components/FeatureCard';
 import { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
 
@@ -9,118 +10,30 @@ export const Home = () => {
   const [stats, setStats] = useState([
     { title: 'Videos Analyzed', value: '—', icon: BarChart3, trend: 'Loading...', gradient: 'bg-youtube' },
     { title: 'Countries Covered', value: '—', icon: Globe, trend: 'Loading...', gradient: 'bg-viral' },
-    { title: 'AI Accuracy', value: '99.2%', icon: Brain, trend: 'Powered by GPT-4o', gradient: 'bg-gradient-to-r from-accent to-secondary' },
+    { title: 'AI Insights', value: 'On demand', icon: Brain, trend: 'Review alongside the recorded data', gradient: 'bg-gradient-to-r from-accent to-secondary' },
   ]);
   const [heroTotals, setHeroTotals] = useState<{ totalVideos: number | null; countries: number | null }>({ totalVideos: null, countries: null });
 
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const formatToday = () => {
-          const d = new Date();
-          const parts = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-          return `Updated ${parts}`;
-        };
-        // Get stats from backend API
-        // Add cache-busting to ensure fresh stats on refresh
-        const timestamp = Date.now();
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
-        const response = await fetch(`${apiUrl}/api/stats?_t=${timestamp}`, {
-          cache: 'no-cache',
-          headers: {
-            'Cache-Control': 'no-cache',
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const totalVideos = data.total_videos ?? null;
-          const countryCount = data.countries ?? null;
-
-          let videosCount: string;
-          if (totalVideos != null) {
-            if (totalVideos >= 1_000_000) {
-              videosCount = `${(totalVideos / 1_000_000).toFixed(1)}M+`.replace('.0', '');
-            } else if (totalVideos >= 1_000) {
-              const rounded = Math.round((totalVideos / 1_000) * 10) / 10;
-              videosCount = `${rounded.toFixed(1).replace('.0', '')}K+`;
-            } else {
-              videosCount = `${totalVideos}+`;
-            }
-          } else {
-            videosCount = '—';
-          }
-
-          setStats([
-            { 
-              title: 'Videos Analyzed', 
-              value: videosCount, 
-              icon: BarChart3, 
-              trend: formatToday(), 
-              gradient: 'bg-youtube' 
-            },
-            { 
-              title: 'Countries Covered', 
-              value: countryCount != null ? `${countryCount}` : '—', 
-              icon: Globe, 
-              trend: 'Global Coverage', 
-              gradient: 'bg-viral' 
-            },
-            { 
-              title: 'AI Accuracy', 
-              value: '99.2%', 
-              icon: Brain, 
-              trend: 'Powered by GPT-4o', 
-              gradient: 'bg-gradient-to-r from-accent to-secondary' 
-            },
-          ]);
-          setHeroTotals({ totalVideos: totalVideos ?? videos.length, countries: countryCount });
-        } else {
-          // Fallback: use video data
-          const videos = await apiService.getVideos();
-          const uniqueCountries = new Set(videos.filter(v => v.country).map(v => v.country));
-          const countryCount = uniqueCountries.size || null;
-          let videosCount: string;
-
-          if (videos.length >= 1_000) {
-            const rounded = Math.round((videos.length / 1_000) * 10) / 10;
-            videosCount = `${rounded.toFixed(1).replace('.0', '')}K+`;
-          } else {
-            videosCount = `${videos.length}+`;
-          }
-
-          setStats([
-            { 
-              title: 'Videos Analyzed', 
-              value: videosCount, 
-              icon: BarChart3, 
-              trend: formatToday(), 
-              gradient: 'bg-youtube' 
-            },
-            { 
-              title: 'Countries Covered', 
-              value: countryCount != null ? `${countryCount}` : '—', 
-              icon: Globe, 
-              trend: 'Global Coverage', 
-              gradient: 'bg-viral' 
-            },
-            { 
-              title: 'AI Accuracy', 
-              value: '99.2%', 
-              icon: Brain, 
-              trend: 'Powered by GPT-4o', 
-              gradient: 'bg-gradient-to-r from-accent to-secondary' 
-            },
-          ]);
-          setHeroTotals({ totalVideos: videos.length, countries: countryCount });
-        }
-      } catch (error) {
-        console.error('Error loading stats:', error);
-        // Keep default stats on error
-      }
-    };
-
-    loadStats();
+    let active = true;
+    apiService.getStats().then((data) => {
+      if (!active) return;
+      const updated = data.latest_collection_at ? `Collected ${new Date(data.latest_collection_at).toLocaleDateString()}` : 'Sample dataset';
+      setStats([
+        { title: 'Videos Analyzed', value: data.total_videos.toLocaleString(), icon: BarChart3, trend: updated, gradient: 'bg-youtube' },
+        { title: 'Countries Covered', value: data.countries.toLocaleString(), icon: Globe, trend: 'Recorded markets', gradient: 'bg-viral' },
+        { title: 'AI Insights', value: 'On demand', icon: Brain, trend: 'Review alongside the recorded data', gradient: 'bg-gradient-to-r from-accent to-secondary' },
+      ]);
+      setHeroTotals({ totalVideos: data.total_videos, countries: data.countries });
+    }).catch(() => {
+      if (!active) return;
+      setStats([
+        { title: 'Videos Analyzed', value: '—', icon: BarChart3, trend: 'Data service unavailable', gradient: 'bg-youtube' },
+        { title: 'Countries Covered', value: '—', icon: Globe, trend: 'Open Analytics to retry', gradient: 'bg-viral' },
+        { title: 'AI Insights', value: 'On demand', icon: Brain, trend: 'Review alongside the recorded data', gradient: 'bg-gradient-to-r from-accent to-secondary' },
+      ]);
+    });
+    return () => { active = false; };
   }, []);
 
   const features = [
@@ -187,7 +100,7 @@ export const Home = () => {
             </h1>
 
             <p className="text-xl text-white max-w-3xl mx-auto mb-8 hero-description">
-              Advanced AI-powered platform for analyzing trending videos and predicting viral success. 
+              Advanced AI-powered platform for analyzing trending videos and predicting viral success.
               {` ${heroTotals.totalVideos != null ? heroTotals.totalVideos.toLocaleString() : '—'} videos analyzed from ${heroTotals.countries != null ? heroTotals.countries : '—'} countries.`}
             </p>
 
@@ -270,7 +183,7 @@ export const Home = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 text-text-heading">Interactive Insights</h3>
               <p className="text-text-body mb-6">
-                Explore data through 8 professional visualizations: area graphs, bar charts, scatter plots, 
+                Explore data through 8 professional visualizations: area graphs, bar charts, scatter plots,
                 heatmaps, and distribution analysis.
               </p>
               <Link to="/insights" className="inline-flex items-center text-primary hover:text-primary/80 font-medium group-hover:translate-x-1 transition-transform">
@@ -290,7 +203,7 @@ export const Home = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 text-text-heading">AI-Powered Tools</h3>
               <p className="text-text-body mb-6">
-                Generate viral titles, analyze trending topics, and get AI insights powered by 
+                Generate viral titles, analyze trending topics, and get AI insights powered by
                 GPT-4o-mini technology.
               </p>
               <Link to="/ai-tools" className="inline-flex items-center text-primary hover:text-primary/80 font-medium group-hover:translate-x-1 transition-transform">
@@ -310,7 +223,7 @@ export const Home = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 text-text-heading">Comprehensive Analytics</h3>
               <p className="text-text-body mb-6">
-                Deep dive into video performance with engagement metrics, country breakdowns, 
+                Deep dive into video performance with engagement metrics, country breakdowns,
                 and virality indicators.
               </p>
               <Link to="/analytics" className="inline-flex items-center text-primary hover:text-primary/80 font-medium group-hover:translate-x-1 transition-transform">
@@ -332,7 +245,7 @@ export const Home = () => {
           >
             <h2 className="text-4xl font-bold mb-4">Start Analyzing Today</h2>
             <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-              Access real-time analytics, AI-powered insights, and comprehensive visualizations 
+              Access real-time analytics, AI-powered insights, and comprehensive visualizations
               to understand what drives viral success on YouTube.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

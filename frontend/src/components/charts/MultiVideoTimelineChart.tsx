@@ -1,6 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { formatViews, formatDate, truncate } from '../../lib/chartUtils';
-import { CustomTooltip } from './CustomTooltip';
+import { formatViews, truncate } from '../../lib/chartUtils';
 
 interface TimelineData {
   date?: string;
@@ -23,14 +22,14 @@ const VIDEO_COLORS = [
   '#ef4444'    // Red
 ];
 
-export default function MultiVideoTimelineChart({ 
-  data, 
+export default function MultiVideoTimelineChart({
+  data,
   videoTitles,
-  title = "Top 5 Videos Growth", 
+  title = "Top 5 Videos Growth",
   height = 450,
-  isLoading = false 
+  isLoading = false
 }: MultiVideoTimelineChartProps) {
-  
+
   if (isLoading) {
     return (
       <div className="bg-card-gradient dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 shadow-xl backdrop-blur-sm">
@@ -64,13 +63,13 @@ export default function MultiVideoTimelineChart({
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.toLocaleDateString('en-US', { month: 'short' });
-    
+
     // Show every 3rd label or important dates (1st, 15th, last)
-    const shouldShow = index % Math.max(1, Math.floor(total / 10)) === 0 || 
-                      day === 1 || 
-                      day === 15 || 
+    const shouldShow = index % Math.max(1, Math.floor(total / 10)) === 0 ||
+                      day === 1 ||
+                      day === 15 ||
                       index === total - 1;
-    
+
     if (shouldShow) {
       return `${month} ${day}`;
     }
@@ -93,16 +92,16 @@ export default function MultiVideoTimelineChart({
               </linearGradient>
             ))}
           </defs>
-          
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke="rgb(161 161 170)" 
+
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="rgb(161 161 170)"
             className="dark:stroke-zinc-700"
-            opacity={0.3} 
+            opacity={0.3}
           />
-          
-          <XAxis 
-            dataKey="date" 
+
+          <XAxis
+            dataKey="date"
             tickFormatter={(value, index) => formatXAxisTick(value, index, data.length)}
             stroke="rgb(113 113 122)"
             className="dark:stroke-zinc-400"
@@ -114,8 +113,8 @@ export default function MultiVideoTimelineChart({
             height={60}
             interval="preserveStartEnd"
           />
-          
-          <YAxis 
+
+          <YAxis
             tickFormatter={formatViews}
             stroke="rgb(113 113 122)"
             className="dark:stroke-zinc-400"
@@ -123,25 +122,25 @@ export default function MultiVideoTimelineChart({
             tickLine={{ stroke: 'rgb(161 161 170)', className: 'dark:stroke-zinc-600' }}
             axisLine={{ stroke: 'rgb(161 161 170)', className: 'dark:stroke-zinc-600' }}
             width={80}
-            label={{ 
-              value: 'Views', 
-              angle: -90, 
-              position: 'insideLeft', 
+            label={{
+              value: 'Views',
+              angle: -90,
+              position: 'insideLeft',
               offset: 10,
               fill: 'rgb(113 113 122)',
               className: 'dark:fill-zinc-400',
               style: { fontSize: '13px', fontWeight: 600 }
             }}
           />
-          
-          <Tooltip 
+
+          <Tooltip
             content={({ active, payload, label }) => {
               if (!active || !payload || payload.length === 0) return null;
               const date = new Date(label);
-              const formattedDate = date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
+              const formattedDate = date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
               });
               return (
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-4 backdrop-blur-sm max-w-sm">
@@ -156,8 +155,8 @@ export default function MultiVideoTimelineChart({
                         const videoTitle = videoTitles[videoIndex] || `Video ${videoIndex + 1}`;
                         return (
                           <div key={index} className="flex items-center gap-3 text-sm py-1">
-                            <div 
-                              className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white dark:ring-zinc-800" 
+                            <div
+                              className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white dark:ring-zinc-800"
                               style={{ backgroundColor: VIDEO_COLORS[videoIndex] || '#3b82f6' }}
                             ></div>
                             <span className="text-zinc-600 dark:text-zinc-400 font-medium flex-1 truncate">
@@ -175,8 +174,8 @@ export default function MultiVideoTimelineChart({
             }}
             cursor={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '5 5' }}
           />
-          
-          <Legend 
+
+          <Legend
             wrapperStyle={{ paddingTop: '30px' }}
             iconType="line"
             formatter={(_value: string, _entry: unknown, index: number) => (
@@ -185,7 +184,7 @@ export default function MultiVideoTimelineChart({
               </span>
             )}
           />
-          
+
           {[1, 2, 3, 4, 5].map((num, idx) => (
             <Line
               key={num}

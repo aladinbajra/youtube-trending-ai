@@ -12,33 +12,33 @@ class ViralityCalculator:
         'trending_duration': 0.20,
         'audience_reach': 0.10,
     }
-    
+
     @staticmethod
     def calculate_growth_velocity(
         view_history: List[Dict],
         days_window: int = 7
     ) -> float:
         if not view_history or len(view_history) < 2:
-            return 50.0
+            return 0.0
         history = sorted(view_history, key=lambda x: x['timestamp'])
         growth_rates = []
         for i in range(1, len(history)):
             prev_views = history[i-1]['views']
             curr_views = history[i]['views']
-            
+
             if prev_views > 0:
                 growth_rate = ((curr_views - prev_views) / prev_views) * 100
                 growth_rates.append(growth_rate)
-        
+
         if not growth_rates:
-            return 50.0
+            return 0.0
         avg_growth = np.mean(growth_rates)
         recent_growth = np.mean(growth_rates[-3:]) if len(growth_rates) >= 3 else avg_growth
         acceleration = recent_growth / (avg_growth + 1)
         score = min(100, max(0, 50 + (avg_growth * 2) + (acceleration * 10)))
-        
+
         return round(score, 2)
-    
+
     @staticmethod
     def calculate_engagement_rate(
         views: int,
@@ -58,9 +58,9 @@ class ViralityCalculator:
             score = 75 + ((engagement_rate - 6) / 4) * 15
         else:
             score = 90 + min(10, (engagement_rate - 10) / 2)
-        
+
         return round(score, 2)
-    
+
     @staticmethod
     def calculate_trending_duration(
         collection_dates: List[str],
@@ -80,9 +80,9 @@ class ViralityCalculator:
             score = 60 + ((days_trending - 7) / 7) * 20
         else:
             score = 80 + min(20, ((days_trending - 14) / 30) * 20)
-        
+
         return round(score, 2)
-    
+
     @staticmethod
     def calculate_audience_reach(
         views: int,
@@ -99,13 +99,13 @@ class ViralityCalculator:
             'education': 0.06,
             'general': 0.07,
         }
-        
+
         benchmark = benchmarks.get(channel_category, 0.07)
-        
+
         if subscribers and subscribers > 0:
             reach_ratio = views / subscribers
             score = (reach_ratio / benchmark) * 50
-            
+
             if reach_ratio > 1.0:
                 bonus = min(30, (reach_ratio - 1.0) * 10)
                 score += bonus
@@ -116,9 +116,9 @@ class ViralityCalculator:
                 score = 60 + ((views - 100_000) / 900_000) * 20
             else:
                 score = (views / 100_000) * 60
-        
+
         return round(min(100, score), 2)
-    
+
     @classmethod
     def calculate_virality_score(
         cls,
@@ -133,15 +133,15 @@ class ViralityCalculator:
         growth_velocity = cls.calculate_growth_velocity(
             view_history or []
         )
-        
+
         engagement_rate = cls.calculate_engagement_rate(
             views, likes, comments
         )
-        
+
         trending_duration = cls.calculate_trending_duration(
             collection_dates or []
         )
-        
+
         audience_reach = cls.calculate_audience_reach(
             views, subscribers
         )
@@ -151,7 +151,7 @@ class ViralityCalculator:
             trending_duration * cls.WEIGHTS['trending_duration'] +
             audience_reach * cls.WEIGHTS['audience_reach']
         )
-        
+
         return {
             'virality_score': round(virality_score, 2),
             'growth_velocity': growth_velocity,
@@ -189,7 +189,7 @@ if __name__ == "__main__":
         {'timestamp': '2025-10-24T00:00:00Z', 'views': 4_200_000},
         {'timestamp': '2025-10-25T00:00:00Z', 'views': 5_000_000},
     ]
-    
+
     collection_dates = [
         '2025-10-20T00:00:00Z',
         '2025-10-21T00:00:00Z',
@@ -204,7 +204,7 @@ if __name__ == "__main__":
         view_history=history,
         collection_dates=collection_dates
     )
-    
+
     print("\nVirality Analysis:")
     print("=" * 50)
     print(f"Overall Virality Score: {result['virality_score']}/100")
